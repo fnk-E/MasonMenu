@@ -1,9 +1,25 @@
 const fs = require('node:fs');
 const path = require('node:path');
+
+const Sequelize = require('sequelize');
+
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+const sequelize = new Sequelize('database', 'user', 'password', {
+	host: 'localhost',
+	dialect: 'sqlite',
+	logging: false,
+	storage: 'database.sqlite',
+});
+
+const Tags = sequelize.define('tags', {
+	guild_id: Sequelize.INTEGER,
+	channel_id: Sequelize.INTEGER,
+	type: Sequelize.INTEGER
+});
 
 client.commands = new Collection();
 const foldersPath = path.join(__dirname, 'commands');
@@ -30,6 +46,7 @@ for (const file of eventFiles) {
 	const filePath = path.join(eventsPath, file);
 	const event = require(filePath);
 	if (event.once) {
+		Tags.sync();
 		client.once(event.name, (...args) => event.execute(...args));
 	} else {
 		client.on(event.name, (...args) => event.execute(...args));
